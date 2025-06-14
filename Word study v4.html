@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smartwatch Vocabulary Trainer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+            overflow: hidden;
+            padding: 10px;
+        }
+        
+        .watch-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+        }
+        
+        .watch-face {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #0f3460, #1a1a2e);
+            box-shadow: 
+                0 0 0 6px rgba(26, 26, 46, 0.8),
+                0 0 30px rgba(0, 0, 0, 0.7),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px 20px;
+        }
+        
+        .top-controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .word-display {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 15px 0;
+        }
+        
+        #current-word {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            text-shadow: 0 0 15px rgba(94, 234, 212, 0.5);
+            transition: all 0.3s ease;
+            max-width: 90%;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 15px;
+        }
+        
+        .bottom-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .btn {
+            background: rgba(15, 23, 42, 0.7);
+            color: #94a3b8;
+            border: 2px solid #334155;
+            border-radius: 50px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            min-width: 90px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn i {
+            font-size: 1.3rem;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+            background: rgba(30, 41, 59, 0.9);
+        }
+        
+        #next-btn {
+            background: linear-gradient(to right, #0ea5e9, #38bdf8);
+            color: white;
+            border: none;
+        }
+        
+        #study-btn {
+            background: linear-gradient(to right, #10b981, #34d399);
+            color: white;
+            border: none;
+        }
+        
+        #reset-btn {
+            background: linear-gradient(to right, #ef4444, #f87171);
+            color: white;
+            border: none;
+        }
+        
+        .timer-display {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #94a3b8;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid #334155;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .progress-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .progress-circle {
+            fill: none;
+            stroke: #0ea5e9;
+            stroke-width: 6;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.5s linear;
+        }
+        
+        .stats {
+            position: absolute;
+            bottom: 25px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            border: 1px solid #334155;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            color: #38bdf8;
+        }
+        
+        .watch-bezel {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .watch-crown {
+            position: absolute;
+            top: 50%;
+            right: -15px;
+            width: 25px;
+            height: 25px;
+            background: #0f3460;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            transform: translateY(-50%);
+            z-index: 5;
+        }
+        
+        .status-bar {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        
+        .battery {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .battery-level {
+            width: 20px;
+            height: 10px;
+            border: 1px solid #94a3b8;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .battery-fill {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            bottom: 1px;
+            width: 70%;
+            background: #10b981;
+            border-radius: 1px;
+        }
+        
+        .battery-tip {
+            width: 3px;
+            height: 5px;
+            background: #94a3b8;
+            border-radius: 0 1px 1px 0;
+        }
+        
+        @media (max-width: 350px) {
+            .watch-face {
+                padding: 30px 15px;
+            }
+            
+            #current-word {
+                font-size: 2.4rem;
+            }
+            
+            .btn {
+                min-width: 80px;
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .btn i {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="watch-container">
+        <div class="watch-face">
+            <svg class="progress-ring" viewBox="0 0 320 320">
+                <circle class="progress-circle" r="152" cx="160" cy="160"></circle>
+            </svg>
+            
+            <div class="status-bar">
+                <div>9:41</div>
+                <div class="battery">
+                    <div class="battery-level">
+                        <div class="battery-fill"></div>
+                    </div>
+                    <div class="battery-tip"></div>
+                </div>
+            </div>
+            
+            <div class="top-controls">
+                <button id="next-btn" class="btn">
+                    <i class="fas fa-step-forward"></i>
+                    <span>Next</span>
+                </button>
+            </div>
+            
+            <div class="word-display">
+                <div id="current-word">Vocabulary</div>
+            </div>
+            
+            <div class="bottom-controls">
+                <button id="study-btn" class="btn">
+                    <i class="fas fa-book-open"></i>
+                    <span>Study</span>
+                </button>
+                <button id="reset-btn" class="btn">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+            
+            <div class="timer-display" id="timer">01:00</div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <span>Words:</span>
+                    <span class="stat-value" id="word-count">20</span>
+                </div>
+                <div class="stat">
+                    <span>Pos:</span>
+                    <span class="stat-value" id="current-position">1</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="watch-bezel"></div>
+        <div class="watch-crown"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get elements
+            const currentWordEl = document.getElementById('current-word');
+            const timerEl = document.getElementById('timer');
+            const nextBtn = document.getElementById('next-btn');
+            const studyBtn = document.getElementById('study-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const wordCountEl = document.getElementById('word-count');
+            const currentPositionEl = document.getElementById('current-position');
+            const progressCircle = document.querySelector('.progress-circle');
+            
+            // Word list
+            const defaultWords = [
+                "Serendipity", "Ephemeral", "Ubiquitous", "Eloquent", "Mellifluous",
+                "Quixotic", "Pernicious", "Resilient", "Voracious", "Capricious",
+                "Ostentatious", "Pragmatic", "Quintessential", "Juxtaposition", "Enigmatic",
+                "Sycophant", "Luminous", "Panacea", "Benevolent", "Esoteric"
+            ];
+            
+            // Initialize variables
+            let words = [];
+            let currentIndex = 0;
+            let timer;
+            let isStudying = false;
+            let timeLeft = 60;
+            const totalTime = 60;
+            let lastUpdateTime = Date.now();
+            
+            // Set word count
+            wordCountEl.textContent = defaultWords.length;
+            
+            // Initialize the app with state preservation
+            function init() {
+                // Try to load saved state
+                const savedState = localStorage.getItem('vocabState');
+                
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    
+                    // Calculate elapsed time since last save
+                    const currentTime = Date.now();
+                    const elapsedSeconds = Math.floor((currentTime - state.lastUpdateTime) / 1000);
+                    
+                    words = state.words;
+                    currentIndex = state.currentIndex;
+                    isStudying = state.isStudying;
+                    
+                    if (!isStudying && state.timeLeft > 0) {
+                        // Adjust time left based on elapsed time
+                        timeLeft = Math.max(0, state.timeLeft - elapsedSeconds);
+                        
+                        // Advance words if time has run out
+                        if (timeLeft <= 0) {
+                            const wordsToAdvance = Math.floor(elapsedSeconds / totalTime) + 1;
+                            currentIndex = (currentIndex + wordsToAdvance) % words.length;
+                            timeLeft = totalTime - (elapsedSeconds % totalTime);
+                        }
+                    } else {
+                        timeLeft = state.timeLeft;
+                    }
+                    
+                    // Update UI
+                    currentPositionEl.textContent = currentIndex + 1;
+                    currentWordEl.textContent = words[currentIndex];
+                    updateTimerDisplay();
+                    updateProgress();
+                    
+                    if (isStudying) {
+                        timerEl.textContent = "Study";
+                        timerEl.style.color = '#34d399';
+                        progressCircle.style.stroke = '#34d399';
+                    } else {
+                        startTimer();
+                    }
+                } else {
+                    // Initialize with default words
+                    words = [...defaultWords];
+                    shuffleArray(words);
+                    
+                    // Reset state
+                    currentIndex = 0;
+                    timeLeft = totalTime;
+                    isStudying = false;
+                    
+                    // Update UI
+                    currentPositionEl.textContent = currentIndex + 1;
+                    currentWordEl.textContent = words[currentIndex];
+                    updateTimerDisplay();
+                    updateProgress();
+                    
+                    // Start the timer
+                    startTimer();
+                }
+                
+                // Update last update time
+                lastUpdateTime = Date.now();
+                
+                // Save initial state
+                saveState();
+            }
+            
+            // Save state to localStorage
+            function saveState() {
+                const state = {
+                    words: words,
+                    currentIndex: currentIndex,
+                    isStudying: isStudying,
+                    timeLeft: timeLeft,
+                    lastUpdateTime: Date.now()
+                };
+                
+                localStorage.setItem('vocabState', JSON.stringify(state));
+                lastUpdateTime = state.lastUpdateTime;
+            }
+            
+            // Shuffle array function
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            // Start the timer
+            function startTimer() {
+                clearInterval(timer);
+                updateTimerDisplay();
+                
+                timer = setInterval(() => {
+                    if (!isStudying) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                        updateProgress();
+                        
+                        if (timeLeft <= 0) {
+                            nextWord();
+                        }
+                        
+                        // Save state every 10 seconds
+                        if (Date.now() - lastUpdateTime > 10000) {
+                            saveState();
+                        }
+                    }
+                }, 1000);
+            }
+            
+            // Update timer display
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Change color when time is low
+                if (timeLeft <= 10) {
+                    timerEl.style.color = '#f87171';
+                } else {
+                    timerEl.style.color = '#94a3b8';
+                }
+            }
+            
+            // Update progress circle
+            function updateProgress() {
+                const circumference = 2 * Math.PI * 152;
+                const offset = circumference - (timeLeft / totalTime) * circumference;
+                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                progressCircle.style.strokeDashoffset = offset;
+            }
+            
+            // Move to next word
+            function nextWord() {
+                // Animation effect
+                currentWordEl.style.transform = 'scale(0.8)';
+                currentWordEl.style.opacity = '0.5';
+                
+                setTimeout(() => {
+                    // Move to next word
+                    currentIndex = (currentIndex + 1) % words.length;
+                    
+                    // Update UI
+                    currentPositionEl.textContent = currentIndex + 1;
+                    currentWordEl.textContent = words[currentIndex];
+                    
+                    // Reset animation
+                    currentWordEl.style.transform = 'scale(1)';
+                    currentWordEl.style.opacity = '1';
+                    
+                    // Reset timer
+                    timeLeft = totalTime;
+                    updateTimerDisplay();
+                    updateProgress();
+                    
+                    // Start the timer again
+                    isStudying = false;
+                    startTimer();
+                    
+                    // Save state
+                    saveState();
+                }, 200);
+            }
+            
+            // Event listeners
+            nextBtn.addEventListener('click', function() {
+                nextWord();
+                progressCircle.style.stroke = '#0ea5e9';
+            });
+            
+            studyBtn.addEventListener('click', function() {
+                isStudying = true;
+                timerEl.textContent = "Study";
+                timerEl.style.color = '#34d399';
+                
+                // Change progress circle to green
+                progressCircle.style.stroke = '#34d399';
+                
+                saveState();
+            });
+            
+            resetBtn.addEventListener('click', function() {
+                // Animation effect
+                currentWordEl.style.transform = 'scale(1.2)';
+                currentWordEl.style.color = '#38bdf8';
+                
+                setTimeout(() => {
+                    // Clear saved state
+                    localStorage.removeItem('vocabState');
+                    
+                    // Reinitialize
+                    words = [...defaultWords];
+                    shuffleArray(words);
+                    currentIndex = 0;
+                    timeLeft = totalTime;
+                    isStudying = false;
+                    
+                    // Update UI
+                    currentPositionEl.textContent = currentIndex + 1;
+                    currentWordEl.textContent = words[currentIndex];
+                    currentWordEl.style.color = '#e2e8f0';
+                    timerEl.textContent = "01:00";
+                    timerEl.style.color = '#94a3b8';
+                    
+                    // Reset progress circle
+                    updateProgress();
+                    progressCircle.style.stroke = '#0ea5e9';
+                    
+                    // Start timer
+                    startTimer();
+                    
+                    // Save new state
+                    saveState();
+                }, 300);
+            });
+            
+            // Save state before page unload
+            window.addEventListener('beforeunload', saveState);
+            
+            // Initialize the app
+            init();
+        });
+    </script>
+</body>
+</html>
