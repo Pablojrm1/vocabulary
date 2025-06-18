@@ -351,11 +351,26 @@
             
             // Word list
             const defaultWords = [
-                "food", "house", "bike", "car", "plane"
+                "認(みと)",
+"張(は)り上(あ)げ",
+"優(すぐ)",
+"豊(ゆた)",
+"隠(かく)",
+"用(もち)",
+"授(さず)",
+"履物(はきもの)",
+"解(と)",
+"資格(しかく)",
+"側(がわ)",
+"取(とり)",
+"除(のぞ)",
+"小羊(こひつじ)",
+"鳩(はと)"
             ];
             
             // Initialize variables
             let words = [];
+            let currentWords = []; // This will hold the current working list of words
             let currentIndex = 0;
             let timer;
             let isStudying = false;
@@ -379,6 +394,7 @@
                     const elapsedSeconds = Math.floor((currentTime - state.lastUpdateTime) / 1000);
                     
                     words = state.words;
+                    currentWords = state.currentWords || [...words]; // Fallback to full list if not saved
                     currentIndex = state.currentIndex;
                     isStudying = state.isStudying;
                     
@@ -389,7 +405,7 @@
                         // Advance words if time has run out
                         if (timeLeft <= 0) {
                             const wordsToAdvance = Math.floor(elapsedSeconds / totalTime) + 1;
-                            currentIndex = (currentIndex + wordsToAdvance) % words.length;
+                            currentIndex = (currentIndex + wordsToAdvance) % currentWords.length;
                             timeLeft = totalTime - (elapsedSeconds % totalTime);
                         }
                     } else {
@@ -398,7 +414,8 @@
                     
                     // Update UI
                     currentPositionEl.textContent = currentIndex + 1;
-                    currentWordEl.textContent = words[currentIndex];
+                    wordCountEl.textContent = currentWords.length;
+                    currentWordEl.textContent = currentWords.length > 0 ? currentWords[currentIndex] : "Done!";
                     updateTimerDisplay();
                     updateProgress();
                     
@@ -412,7 +429,8 @@
                 } else {
                     // Initialize with default words
                     words = [...defaultWords];
-                    shuffleArray(words);
+                    currentWords = [...words];
+                    shuffleArray(currentWords);
                     
                     // Reset state
                     currentIndex = 0;
@@ -421,7 +439,8 @@
                     
                     // Update UI
                     currentPositionEl.textContent = currentIndex + 1;
-                    currentWordEl.textContent = words[currentIndex];
+                    wordCountEl.textContent = currentWords.length;
+                    currentWordEl.textContent = currentWords[currentIndex];
                     updateTimerDisplay();
                     updateProgress();
                     
@@ -440,6 +459,7 @@
             function saveState() {
                 const state = {
                     words: words,
+                    currentWords: currentWords,
                     currentIndex: currentIndex,
                     isStudying: isStudying,
                     timeLeft: timeLeft,
@@ -511,25 +531,43 @@
                 currentWordEl.style.opacity = '0.5';
                 
                 setTimeout(() => {
-                    // Move to next word
-                    currentIndex = (currentIndex + 1) % words.length;
-                    
-                    // Update UI
-                    currentPositionEl.textContent = currentIndex + 1;
-                    currentWordEl.textContent = words[currentIndex];
+                    // Remove the current word from the list
+                    if (currentWords.length > 0) {
+                        currentWords.splice(currentIndex, 1);
+                        
+                        // If we have words left, get the next one
+                        if (currentWords.length > 0) {
+                            // Reset index to 0 and shuffle remaining words
+                            currentIndex = 0;
+                            shuffleArray(currentWords);
+                            
+                            // Update UI
+                            currentPositionEl.textContent = currentIndex + 1;
+                            wordCountEl.textContent = currentWords.length;
+                            currentWordEl.textContent = currentWords[currentIndex];
+                        } else {
+                            // No words left
+                            currentWordEl.textContent = "Done!";
+                            currentPositionEl.textContent = "0";
+                            wordCountEl.textContent = "0";
+                            clearInterval(timer);
+                        }
+                    }
                     
                     // Reset animation
                     currentWordEl.style.transform = 'scale(1)';
                     currentWordEl.style.opacity = '1';
                     
-                    // Reset timer
-                    timeLeft = totalTime;
-                    updateTimerDisplay();
-                    updateProgress();
-                    
-                    // Start the timer again
-                    isStudying = false;
-                    startTimer();
+                    // Reset timer if we still have words
+                    if (currentWords.length > 0) {
+                        timeLeft = totalTime;
+                        updateTimerDisplay();
+                        updateProgress();
+                        
+                        // Start the timer again
+                        isStudying = false;
+                        startTimer();
+                    }
                     
                     // Save state
                     saveState();
@@ -538,8 +576,10 @@
             
             // Event listeners
             nextBtn.addEventListener('click', function() {
-                nextWord();
-                progressCircle.style.stroke = '#0ea5e9';
+                if (currentWords.length > 0) {
+                    nextWord();
+                    progressCircle.style.stroke = '#0ea5e9';
+                }
             });
             
             studyBtn.addEventListener('click', function() {
@@ -564,14 +604,16 @@
                     
                     // Reinitialize
                     words = [...defaultWords];
-                    shuffleArray(words);
+                    currentWords = [...words];
+                    shuffleArray(currentWords);
                     currentIndex = 0;
                     timeLeft = totalTime;
                     isStudying = false;
                     
                     // Update UI
                     currentPositionEl.textContent = currentIndex + 1;
-                    currentWordEl.textContent = words[currentIndex];
+                    wordCountEl.textContent = currentWords.length;
+                    currentWordEl.textContent = currentWords[currentIndex];
                     currentWordEl.style.color = '#e2e8f0';
                     timerEl.textContent = "01:00";
                     timerEl.style.color = '#94a3b8';
